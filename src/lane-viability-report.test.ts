@@ -129,6 +129,19 @@ function makeOffer(overrides: Partial<Offer> & { id: string }): Offer {
   })();
 
   (() => {
+    console.log('-- leaves viability and gaps undefined when the truck type is not configured --');
+    const report = new LaneViabilityReport(
+      [makeOffer({ id: 'off1', truckType: 'refrigerated' })],
+      { dry: { revenue: 1000, weight: 1000, pallets: 1 } }
+    );
+    const rows = report.build();
+    expect(rows[0].laneViable).to.equal(undefined);
+    expect(rows[0].laneRevenueGap).to.equal(undefined);
+    expect(rows[0].laneWeightGap).to.equal(undefined);
+    expect(rows[0].lanePalletsGap).to.equal(undefined);
+  })();
+
+  (() => {
     console.log('-- getLaneKey combines destination and truck type --');
     expect(getLaneKey('Dallas, TX', 'dry')).to.equal('Dallas, TX|dry');
   })();
