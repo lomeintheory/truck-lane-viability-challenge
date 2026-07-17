@@ -12,7 +12,7 @@ export function calculateLaneTotals(offers: Offer[]): Map<string, LaneTotals> {
   for (const offer of offers) {
     if (offer.status === OfferStatus.ACCEPTED) continue;
 
-    const laneKey = `${offer.destination}|${offer.truckType}`;
+    const laneKey = getLaneKey(offer.destination, offer.truckType);
     const currentTotals = totals.get(laneKey) ?? { revenue: 0, weight: 0, pallets: 0 };
     currentTotals.revenue += Math.round(offer.quantity * offer.pricePerCase * 100) / 100;
     currentTotals.weight += Math.round(offer.quantity * offer.unitGrossWeight * 100) / 100;
@@ -24,6 +24,10 @@ export function calculateLaneTotals(offers: Offer[]): Map<string, LaneTotals> {
 
 export function getMinimums(minimums: LaneMinimums, truckType: string): MinimumSet {
   return minimums[truckType] ?? null;
+}
+
+export function getLaneKey(destination: string, truckType: string): string {
+  return `${destination}|${truckType}`;
 }
 
 export class LaneViabilityReport {
@@ -39,7 +43,7 @@ export class LaneViabilityReport {
     const totalsByLane = calculateLaneTotals(this.offers);
 
     for (const offer of this.offers) {
-      const laneKey = `${offer.destination}|${offer.truckType}`;
+      const laneKey = getLaneKey(offer.destination, offer.truckType);
       const totals = totalsByLane.get(laneKey) ?? { revenue: 0, weight: 0, pallets: 0 };
       const mins = getMinimums(this.minimums, offer.truckType);
 
