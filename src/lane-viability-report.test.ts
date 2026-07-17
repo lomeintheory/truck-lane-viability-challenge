@@ -1,4 +1,4 @@
-import { LaneViabilityReport } from "./lane-viability-report";
+import { LaneViabilityReport, calculateLaneTotals } from "./lane-viability-report";
 import { Offer, OfferStatus } from "./types";
 import { expect } from "chai";
 
@@ -83,6 +83,37 @@ function makeOffer(overrides: Partial<Offer> & { id: string }): Offer {
     const rows = report.build();
     expect(rows[0].laneRevenue).to.equal(1500);
     expect(rows[0].laneViable).to.equal(true);
+  })();
+
+  (() => {
+    console.log('-- calculateLaneTotals aggregates revenue, weight, and pallets per lane --');
+    const totals = calculateLaneTotals([
+      makeOffer({ id: 'off1', quantity: 200, pricePerCase: 12 }),
+      makeOffer({ id: 'off2', quantity: 150, pricePerCase: 10 })
+    ]);
+    const dallasDry = totals.get('Dallas, TX|dry');
+    expect(dallasDry?.revenue).to.equal(3900);
+    expect(dallasDry?.weight).to.equal(4200);
+    expect(dallasDry?.pallets).to.equal(7);
+  })();
+
+  (() => {
+    console.log('-- calculateLaneTotals excludes accepted offers --');
+    const totals = calculateLaneTotals([
+      makeOffer({ id: 'off1' }),
+      makeOffer({ id: 'off2', status: OfferStatus.ACCEPTED }),
+    ]);
+    expect(totals.get('Dallas, TX|dry')?.revenue).to.equal(1000);
+  })();
+  
+  (() => {
+    console.log('-- calculateLaneTotals keeps different truck types at the same destination separate --');
+    const totals = calculateLaneTotals([
+      makeOffer({ id: 'off1', truckType: 'dry' }),
+      makeOffer({ id: 'off2', truckType: 'refrigerated' }),
+    ]);
+    expect(totals.get('Dallas, TX|dry')?.revenue).to.equal(1000);
+    expect(totals.get('Dallas, TX|refrigerated')?.revenue).to.equal(1000);
   })();
 
   console.log('...Tests complete!');
