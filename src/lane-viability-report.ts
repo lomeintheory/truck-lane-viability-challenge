@@ -1,4 +1,4 @@
-import { Offer, OfferStatus, LaneMinimums } from "./types";
+import { Offer, OfferStatus, LaneMinimums, MinimumSet } from "./types";
 
 interface LaneTotals {
   revenue: number;
@@ -11,7 +11,7 @@ export function calculateLaneTotals(offers: Offer[]): Map<string, LaneTotals> {
 
   for (const offer of offers) {
     if (offer.status === OfferStatus.ACCEPTED) continue;
-    
+
     const laneKey = `${offer.destination}|${offer.truckType}`;
     const currentTotals = totals.get(laneKey) ?? { revenue: 0, weight: 0, pallets: 0 };
     currentTotals.revenue += Math.round(offer.quantity * offer.pricePerCase * 100) / 100;
@@ -20,6 +20,10 @@ export function calculateLaneTotals(offers: Offer[]): Map<string, LaneTotals> {
     totals.set(laneKey, currentTotals);
   }
   return totals;
+}
+
+export function getMinimums(minimums: LaneMinimums, truckType: string): MinimumSet {
+  return minimums[truckType] ?? null;
 }
 
 export class LaneViabilityReport {
@@ -37,7 +41,7 @@ export class LaneViabilityReport {
     for (const offer of this.offers) {
       const laneKey = `${offer.destination}|${offer.truckType}`;
       const totals = totalsByLane.get(laneKey) ?? { revenue: 0, weight: 0, pallets: 0 };
-      const mins = this.minimums[offer.truckType] ? this.minimums[offer.truckType] : { revenue: 0, weight: 0, pallets: 0 };
+      const mins = getMinimums(this.minimums, offer.truckType);
 
       offer.laneKey = laneKey;
       offer.laneRevenue = totals.revenue;
