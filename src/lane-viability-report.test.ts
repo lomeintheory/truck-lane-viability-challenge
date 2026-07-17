@@ -1,4 +1,4 @@
-import { LaneViabilityReport, calculateLaneTotals, getMinimums } from "./lane-viability-report";
+import { LaneViabilityReport, calculateLaneTotals, getLaneKey, getMinimums } from "./lane-viability-report";
 import { Offer, OfferStatus } from "./types";
 import { expect } from "chai";
 
@@ -126,7 +126,12 @@ function makeOffer(overrides: Partial<Offer> & { id: string }): Offer {
     console.log('-- getMinimums returns null for an unconfigured truck type --');
     const mins = getMinimums({ dry: { revenue: 100, weight: 200, pallets: 3 } }, 'refrigerated');
     expect(mins).to.equal(null);
-  })
+  })();
+
+  (() => {
+    console.log('-- getLaneKey combines destination and truck type --');
+    expect(getLaneKey('Dallas, TX', 'dry')).to.equal('Dallas, TX|dry');
+  })();
 
   console.log('...Tests complete!');
 })();
