@@ -6,6 +6,12 @@ interface LaneTotals {
   pallets: number;
 }
 
+interface LaneGap {
+  revenue: number;
+  weight: number;
+  pallets: number;
+}
+
 export function calculateLaneTotals(offers: Offer[]): Map<string, LaneTotals> {
   const totals = new Map<string, LaneTotals>();
 
@@ -30,6 +36,16 @@ export function getLaneKey(destination: string, truckType: string): string {
   return `${destination}|${truckType}`;
 }
 
+export function calculateLaneGap(totals: LaneTotals, mins: MinimumSet | null): LaneGap | null {
+  if (!mins) return null;
+
+  return {
+    revenue: Math.max(0, mins.revenue - totals.revenue),
+    weight: Math.max(0, mins.weight - totals.weight),
+    pallets: Math.max(0, mins.pallets - totals.pallets),
+  }
+}
+
 export class LaneViabilityReport {
   offers: Offer[];
   minimums: LaneMinimums;
@@ -47,6 +63,7 @@ export class LaneViabilityReport {
       const totals = totalsByLane.get(laneKey) ?? { revenue: 0, weight: 0, pallets: 0 };
       const mins = getMinimums(this.minimums, offer.truckType);
       const laneViable = mins ? totals.revenue >= mins.revenue && totals.weight >= mins.weight && totals.pallets >= mins.pallets : undefined;
+      const gap = calculateLaneGap(totals, mins);
 
       return {
         ...offer,
@@ -55,6 +72,9 @@ export class LaneViabilityReport {
         laneWeight: totals.weight,
         lanePallets: totals.pallets,
         laneViable,
+        laneRevenueGap: gap?.revenue,
+        laneWeightGap: gap?.weight,
+        lanePalletsGap: gap?.pallets,
       }
     })
 

@@ -1,4 +1,4 @@
-import { LaneViabilityReport, calculateLaneTotals, getLaneKey, getMinimums } from "./lane-viability-report";
+import { LaneViabilityReport, calculateLaneGap, calculateLaneTotals, getLaneKey, getMinimums } from "./lane-viability-report";
 import { Offer, OfferStatus } from "./types";
 import { expect } from "chai";
 
@@ -131,6 +131,55 @@ function makeOffer(overrides: Partial<Offer> & { id: string }): Offer {
   (() => {
     console.log('-- getLaneKey combines destination and truck type --');
     expect(getLaneKey('Dallas, TX', 'dry')).to.equal('Dallas, TX|dry');
+  })();
+
+  (() => {
+    console.log('-- calculateLaneGap returns zero gaps when totals meet minimums --');
+    const gap = calculateLaneGap(
+      { revenue: 1000, weight: 1200, pallets: 2 },
+      { revenue: 1000, weight: 1000, pallets: 1 }
+    );
+    expect(gap).to.deep.equal({ revenue: 0, weight: 0, pallets: 0 });
+  })();
+
+  (() => {
+    console.log('-- calculateLaneGap returns the shortfall per dimension when totals miss minimums --');
+    const gap = calculateLaneGap(
+      { revenue: 1000, weight: 1200, pallets: 2 },
+      { revenue: 1500, weight: 1500, pallets: 5}
+    );
+    expect(gap).to.deep.equal({ revenue: 500, weight: 300, pallets: 3 });
+  })();
+
+  (() => {
+    console.log('-- calculateLaneGap returns null when minimums are not configured --');
+    const gap = calculateLaneGap({ revenue: 1000, weight: 1200, pallets: 2 }, null);
+    expect(gap).to.equal(null);
+  })();
+
+  (() => {
+    console.log('-- reports a zero gap on every dimension when a lane is viable --');
+    const report = new LaneViabilityReport(
+      [makeOffer({ id: 'off1', quantity: 200, pricePerCase: 12 })],
+      { dry: { revenue: 1000, weight: 1000, pallets: 1 } }
+    );
+    const rows = report.build();
+    expect(rows[0].laneRevenueGap).to.equal(0);
+    expect(rows[0].laneWeightGap).to.equal(0);
+    expect(rows[0].lanePalletsGap).to.equal(0);
+  })();
+
+  (() => {
+    console.log('-- reports the shortfall per dimension when a lane is not viable --');
+    const report = new LaneViabilityReport(
+      [makeOffer({ id: 'off1' })],
+      { dry: { revenue: 1500, weight: 1500, pallets: 5 } }
+    );
+    const rows = report.build();
+    expect(rows[0].laneRevenueGap).to.equal(500);
+    expect(rows[0].laneWeightGap).to.equal(300);
+    expect(rows[0].lanePalletsGap).to.equal(3);
+    expect(rows[0].laneViable).to.equal(false);
   })();
 
   console.log('...Tests complete!');

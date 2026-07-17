@@ -22,6 +22,9 @@ export interface OfferWithLaneData extends Offer {
   laneWeight: number;
   lanePallets: number;
   laneViable: boolean | undefined;
+  laneRevenueGap: number | undefined;
+  laneWeightGap: number | undefined;
+  lanePalletsGap: number | undefined;
 }
 
 export interface MinimumSet {
