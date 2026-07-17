@@ -1,4 +1,4 @@
-import { LaneViabilityReport, calculateLaneTotals } from "./lane-viability-report";
+import { LaneViabilityReport, calculateLaneTotals, getMinimums } from "./lane-viability-report";
 import { Offer, OfferStatus } from "./types";
 import { expect } from "chai";
 
@@ -105,7 +105,7 @@ function makeOffer(overrides: Partial<Offer> & { id: string }): Offer {
     ]);
     expect(totals.get('Dallas, TX|dry')?.revenue).to.equal(1000);
   })();
-  
+
   (() => {
     console.log('-- calculateLaneTotals keeps different truck types at the same destination separate --');
     const totals = calculateLaneTotals([
@@ -115,6 +115,18 @@ function makeOffer(overrides: Partial<Offer> & { id: string }): Offer {
     expect(totals.get('Dallas, TX|dry')?.revenue).to.equal(1000);
     expect(totals.get('Dallas, TX|refrigerated')?.revenue).to.equal(1000);
   })();
+
+  (() => {
+    console.log('-- getMinimums returns the configured minimums for a truck type --');
+    const mins = getMinimums({ dry: { revenue: 100, weight: 200, pallets: 3 } }, 'dry');
+    expect(mins).to.deep.equal({ revenue: 100, weight: 200, pallets: 3 });
+  })();
+
+  (() => {
+    console.log('-- getMinimums returns null for an unconfigured truck type --');
+    const mins = getMinimums({ dry: { revenue: 100, weight: 200, pallets: 3 } }, 'refrigerated');
+    expect(mins).to.equal(null);
+  })
 
   console.log('...Tests complete!');
 })();
