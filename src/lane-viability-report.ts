@@ -1,4 +1,4 @@
-import { Offer, OfferStatus, LaneMinimums, MinimumSet } from "./types";
+import { Offer, OfferStatus, LaneMinimums, MinimumSet, OfferWithLaneData } from "./types";
 
 interface LaneTotals {
   revenue: number;
@@ -22,7 +22,7 @@ export function calculateLaneTotals(offers: Offer[]): Map<string, LaneTotals> {
   return totals;
 }
 
-export function getMinimums(minimums: LaneMinimums, truckType: string): MinimumSet {
+export function getMinimums(minimums: LaneMinimums, truckType: string): MinimumSet | null {
   return minimums[truckType] ?? null;
 }
 
@@ -39,21 +39,37 @@ export class LaneViabilityReport {
     this.minimums = minimums;
   }
 
-  build(): Offer[] {
+  build(): OfferWithLaneData[] {
     const totalsByLane = calculateLaneTotals(this.offers);
 
-    for (const offer of this.offers) {
+    return this.offers.map((offer) => {
       const laneKey = getLaneKey(offer.destination, offer.truckType);
       const totals = totalsByLane.get(laneKey) ?? { revenue: 0, weight: 0, pallets: 0 };
       const mins = getMinimums(this.minimums, offer.truckType);
+      const laneViable = mins ? totals.revenue >= mins.revenue && totals.weight >= mins.weight && totals.pallets >= mins.pallets : undefined;
 
-      offer.laneKey = laneKey;
-      offer.laneRevenue = totals.revenue;
-      offer.laneWeight = totals.weight;
-      offer.lanePallets = totals.pallets;
-      offer.laneViable = totals.revenue >= mins.revenue && totals.weight >= mins.weight && totals.pallets >= mins.pallets;
-    }
-    return this.offers;
+      return {
+        ...offer,
+        laneKey,
+        laneRevenue: totals.revenue,
+        laneWeight: totals.weight,
+        lanePallets: totals.pallets,
+        laneViable,
+      }
+    })
+
+    // for (const offer of this.offers) {
+    //   const laneKey = getLaneKey(offer.destination, offer.truckType);
+    //   const totals = totalsByLane.get(laneKey) ?? { revenue: 0, weight: 0, pallets: 0 };
+    //   const mins = getMinimums(this.minimums, offer.truckType);
+
+    //   offer.laneKey = laneKey;
+    //   offer.laneRevenue = totals.revenue;
+    //   offer.laneWeight = totals.weight;
+    //   offer.lanePallets = totals.pallets;
+    //   offer.laneViable = totals.revenue >= mins.revenue && totals.weight >= mins.weight && totals.pallets >= mins.pallets;
+    // }
+    // return this.offers;
     // console.log('Building lane viability report...');
     // for (const offer of this.offers) {
     //   const laneOffers = this.offers.filter(

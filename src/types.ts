@@ -14,12 +14,14 @@ export interface Offer {
   pricePerCase: number; // dollars
   unitGrossWeight: number; // lbs per case
   casesPerPallet: number;
-  // populated by LaneViabilityReport
-  laneKey?: string;
-  laneRevenue?: number;
-  laneWeight?: number;
-  lanePallets?: number;
-  laneViable?: boolean;
+}
+
+export interface OfferWithLaneData extends Offer {
+  laneKey: string;
+  laneRevenue: number;
+  laneWeight: number;
+  lanePallets: number;
+  laneViable: boolean | undefined;
 }
 
 export interface MinimumSet {
